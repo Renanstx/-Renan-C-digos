@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Renan Códigos</title>
+
+  <!-- Bibliotecas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #fff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #111827;
+      padding: 30px;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+    }
+
+    h1 { margin-bottom: 20px; font-size: 24px; color: #38bdf8; }
+
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    input, select { background: #1f2937; color: #fff; }
+
+    button {
+      background: #38bdf8;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover { background: #0ea5e9; }
+
+    .btn-secondary { background: #374151; color: #fff; }
+    .btn-secondary:hover { background: #4b5563; }
+
+    #resultado {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 150px;
+      flex-direction: column;
+    }
+
+    canvas, svg {
+      background: white;
+      padding: 10px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Renan Códigos</h1>
+
+    <input type="text" id="texto" placeholder="Digite a informação...">
+
+    <select id="tipo">
+      <option value="qrcode">QR Code</option>
+      <option value="barcode">Código de Barras</option>
+    </select>
+
+    <button onclick="gerarCodigo()">Gerar</button>
+    <button onclick="baixarImagem()">Baixar</button>
+    <button class="btn-secondary" onclick="limpar()">Limpar</button>
+
+    <div id="resultado"></div>
+  </div>
+
+  <script>
+    function gerarCodigo() {
+      const texto = document.getElementById('texto').value.trim();
+      const tipo = document.getElementById('tipo').value;
+      const resultado = document.getElementById('resultado');
+
+      resultado.innerHTML = '';
+
+      if (!texto) {
+        alert('Digite alguma informação!');
+        return;
+      }
+
+      if (tipo === 'qrcode') {
+        new QRCode(resultado, {
+          text: texto,
+          width: 200,
+          height: 200
+        });
+      } else {
+        const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+        svg.setAttribute("id", "barcode");
+        resultado.appendChild(svg);
+
+        try {
+          JsBarcode("#barcode", texto, {
+            format: "CODE128",
+            displayValue: true,
+            width: 2,
+            height: 80,
+            margin: 10
+          });
+        } catch (e) {
+          resultado.innerHTML = '<p style="color:red">Erro ao gerar código de barras</p>';
+        }
+      }
+    }
+
+    function baixarImagem() {
+      const resultado = document.getElementById('resultado');
+
+      const canvas = resultado.querySelector('canvas');
+      const img = resultado.querySelector('img');
+      const svg = resultado.querySelector('svg');
+
+      if (canvas) {
+        const link = document.createElement('a');
+        link.download = 'qrcode.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      } else if (img) {
+        const link = document.createElement('a');
+        link.download = 'qrcode.png';
+        link.href = img.src;
+        link.click();
+      } else if (svg) {
+        const serializer = new XMLSerializer();
+        const svgData = serializer.serializeToString(svg);
+
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const img = new Image();
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+
+        img.onload = function() {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(url);
+
+          const link = document.createElement('a');
+          link.download = 'barcode.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        };
+
+        img.src = url;
+      } else {
+        alert('Gere um código primeiro!');
+      }
+    }
+
+    function limpar() {
+      document.getElementById('texto').value = '';
+      document.getElementById('resultado').innerHTML = '';
+    }
+  </script>
+
+</body>
+</html>
